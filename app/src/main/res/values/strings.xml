@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Make File Size</string>
+    <string name="app_name">Blank File Generator</string>
     <string name="action_settings">Settings</string>
     <string name="title_activity_file_explorer">Select Path</string>
 </resources>

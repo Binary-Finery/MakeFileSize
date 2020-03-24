@@ -1,9 +1,13 @@
 package com.spencerstudios.makefilesize
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
+import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
@@ -19,19 +23,23 @@ import kotlinx.android.synthetic.main.content_main.*
 import java.io.File
 import java.util.*
 
+
 class MainActivity : AppCompatActivity(), TextWatcher {
 
     private var byteSize: Long = 0
     private var isProcessing = false
     private var path : String = ""
 
-    private var chunks = 0
+    private var PERMS_REQUEST_CODE = 123
+    private lateinit var permissionsList : Array<String>
+
     private var totalChunks = 0
 
     private lateinit var etBytesArr: Array<EditText>
     private lateinit var progressDialog : AlertDialog
     private lateinit var tvProgress : TextView
     private lateinit var progressBar : ProgressBar
+    private lateinit var wtfa : AsyncTask<String, String, String>
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +47,17 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        supportActionBar?.hide()
+        permissionsList = arrayOf(
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+        if (hasPermission()) {
+            Log.d("has permission", "permitted");
+        } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                reqPermissions()
+            }
+        }
 
         initProgressDialog()
 
@@ -53,31 +71,52 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         calcBytes()
 
         btnCreateFile.setOnClickListener {
-            when {
-                !isProcessing -> {
-                    val filename = etFilename.text.toString().trim()
-                    when {
-                        filename.isNotEmpty() && path.isNotEmpty() -> {
-                            setChunks()
-                            val wtfa = WriteToFileAsync(filename, byteSize)
-                            wtfa.execute("")
-                        }else -> Toast.makeText(this@MainActivity, "writing to file, please wait!", Toast.LENGTH_SHORT).show()
+            if (hasPermission()) {
+                when {
+                    !isProcessing -> {
+                        val filename = etFilename.text.toString().trim()
+                        when {
+                            filename.isNotEmpty() && path.isNotEmpty() -> {
+                                setChunks()
+                                wtfa = WriteToFileAsync(filename, byteSize)
+                                wtfa.execute("")
+                            }
+                            else -> Toast.makeText(
+                                this@MainActivity,
+                                "writing to file, please wait!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
+                    else -> Toast.makeText(
+                        this@MainActivity,
+                        "file name and path must be specified",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-                else -> Toast.makeText(this@MainActivity, "file name and path must be specified", Toast.LENGTH_SHORT).show()
+            }else{
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    reqPermissions()
+                }
             }
         }
 
         tvPath.setOnClickListener {
-            val i = Intent(this@MainActivity, FileExplorerActivity::class.java)
-            startActivityForResult(i, SELECT_DIRECTORY_RES_CODE)
+            if(hasPermission()) {
+                val i = Intent(this@MainActivity, FileExplorerActivity::class.java)
+                startActivityForResult(i, SELECT_DIRECTORY_RES_CODE)
+            }else{
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    reqPermissions()
+                }
+            }
         }
     }
 
     private fun setChunks() {
-        totalChunks = (byteSize / MB).toInt()
+        totalChunks = (byteSize / TEN_MB).toInt()
         when{
-            totalChunks * MB < byteSize -> totalChunks ++
+            totalChunks * TEN_MB < byteSize -> totalChunks ++
         }
     }
 
@@ -129,16 +168,16 @@ class MainActivity : AppCompatActivity(), TextWatcher {
             try {
                 var prog: Long = 0
 
-                if (byteSize > MB) {
-                    val chunks = bytes / MB
+                if (byteSize > TEN_MB) {
+                    val chunks = bytes / TEN_MB
                     for (i in 0 until chunks) {
-                        val ba = ByteArray(MB)
+                        val ba = ByteArray(TEN_MB)
                         file.appendBytes(ba)
                         prog ++
                         publishProgress("$prog")
                     }
 
-                    val remainder = bytes % (chunks * MB)
+                    val remainder = bytes % (chunks * TEN_MB)
 
                     Log.d("rem", "$remainder")
 
@@ -180,6 +219,7 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         override fun onCancelled(result: String?) {
             super.onCancelled(result)
 
+            Toast.makeText(this@MainActivity, "process cancelled",Toast.LENGTH_LONG).show()
             isProcessing = false
             progressDialog.dismiss()
         }
@@ -192,7 +232,8 @@ class MainActivity : AppCompatActivity(), TextWatcher {
 
             progressBar.progress = 0
             progressBar.max = totalChunks
-            progressBar.incrementProgressBy(1)
+            tvProgress.text = "0%"
+
         }
     }
 
@@ -247,6 +288,41 @@ class MainActivity : AppCompatActivity(), TextWatcher {
                         tvPath.text = path
                     }
                 }
+            }
+        }
+    }
+
+    override fun onBackPressed() {
+
+        when {
+            isProcessing -> wtfa.cancel(true)
+        }
+        super.onBackPressed()
+    }
+
+    private fun hasPermission(): Boolean {
+        for(perm in permissionsList){
+            if(ActivityCompat.checkSelfPermission(this,perm)
+                != PackageManager.PERMISSION_GRANTED){
+                return false
+            }
+        }
+        return true
+    }
+
+    private fun reqPermissions(){
+        if (Build.VERSION.SDK_INT >= 23) {
+            requestPermissions(permissionsList, PERMS_REQUEST_CODE)
+        }
+    }
+
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            Log.d("PERMISSION", "granted")
+        } else {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissionsList[0]) || !ActivityCompat.shouldShowRequestPermissionRationale(this, permissionsList[1])) {
+                Toast.makeText(this@MainActivity, "access denied :(", Toast.LENGTH_LONG).show()
             }
         }
     }
