@@ -6,17 +6,14 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
+        android:padding="16dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        tools:showIn="@layout/activity_file_explorer"
-        tools:context=".FileExplorerActivity">
+        tools:showIn="@layout/activity_blank_message_generator"
+        tools:context=".LoremIpsumGeneratorActivity">
 
     <LinearLayout android:layout_width="match_parent"
                   android:layout_height="wrap_content"
-                  android:layout_marginTop="16dp"
-                  android:layout_marginEnd="16dp"
-                  android:layout_marginStart="16dp"
-                  android:orientation="horizontal"
-                  tools:ignore="UseCompoundDrawables">
+                  android:orientation="horizontal" tools:ignore="UseCompoundDrawables">
 
         <TextView android:layout_width="0dp"
                   android:layout_weight="1"
@@ -25,48 +22,40 @@
                   android:textStyle="bold"
                   android:textColor="#323232"
                   android:fontFamily="@font/poppins_medium"
-                  android:text="Path" tools:ignore="HardcodedText"/>
+                  android:text="Lorem Ipsum" tools:ignore="HardcodedText"/>
 
         <ImageView
-                android:id="@+id/icHome"
+                android:id="@+id/icMenu"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_home"
-                android:layout_marginEnd="24dp"
-                android:layout_gravity="center_vertical"
-                android:background="?attr/selectableItemBackground" tools:ignore="ContentDescription"/>
-
-
-        <ImageView
-                android:id="@+id/icNewFolder"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_create_new_folder"
+                android:layout_marginEnd="8dp"
+                android:src="@drawable/ic_more_menu"
                 android:layout_gravity="center_vertical"
                 android:background="?attr/selectableItemBackground" tools:ignore="ContentDescription"/>
 
     </LinearLayout>
 
-    <TextView
-            android:id="@+id/tvPath"
-            android:layout_width="wrap_content"
+    <TextView android:layout_width="wrap_content"
               android:layout_height="wrap_content"
+              android:textSize="16sp"
               android:textStyle="bold"
               android:textColor="#323232"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:singleLine="true"
-
+              android:layout_marginTop="-10dp"
               android:fontFamily="@font/poppins_medium"
               android:text="Generator" tools:ignore="HardcodedText"/>
 
 
-    <ListView
-            android:id="@+id/lv"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
+    <ScrollView android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+              android:fillViewport="true" tools:ignore="UselessParent">
+
+      <TextView
+              android:id="@+id/tvLoremIpsum"
+              android:layout_width="match_parent"
+              android:fontFamily="@font/poppins_medium"
+                android:layout_height="wrap_content"/>
+
+  </ScrollView>
 
 </LinearLayout>
-
-

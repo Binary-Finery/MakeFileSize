@@ -14,10 +14,10 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.LayoutInflater
-import android.widget.EditText
-import android.widget.ProgressBar
-import android.widget.TextView
-import android.widget.Toast
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.widget.*
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import java.io.File
@@ -28,24 +28,28 @@ class MainActivity : AppCompatActivity(), TextWatcher {
 
     private var byteSize: Long = 0
     private var isProcessing = false
-    private var path : String = ""
+    private var path: String = ""
+
 
     private var PERMS_REQUEST_CODE = 123
-    private lateinit var permissionsList : Array<String>
+    private lateinit var permissionsList: Array<String>
 
     private var totalChunks = 0
 
     private lateinit var etBytesArr: Array<EditText>
-    private lateinit var progressDialog : AlertDialog
-    private lateinit var tvProgress : TextView
-    private lateinit var progressBar : ProgressBar
-    private lateinit var wtfa : AsyncTask<String, String, String>
+    private lateinit var progressDialog: AlertDialog
+    private lateinit var tvProgress: TextView
+    private lateinit var progressBar: ProgressBar
+    private lateinit var wtfa: AsyncTask<String, String, String>
 
     @SuppressLint("SetTextI18n")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+
+
+        toolbar.visibility = View.GONE
 
         permissionsList = arrayOf(
             Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -70,7 +74,7 @@ class MainActivity : AppCompatActivity(), TextWatcher {
 
         calcBytes()
 
-        btnCreateFile.setOnClickListener {
+        fab.setOnClickListener {
             if (hasPermission()) {
                 when {
                     !isProcessing -> {
@@ -83,18 +87,18 @@ class MainActivity : AppCompatActivity(), TextWatcher {
                             }
                             else -> Toast.makeText(
                                 this@MainActivity,
-                                "writing to file, please wait!",
+                                "file name and path must be specified",
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
                     }
                     else -> Toast.makeText(
                         this@MainActivity,
-                        "file name and path must be specified",
+                        "creating file, please wait!",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
-            }else{
+            } else {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     reqPermissions()
                 }
@@ -102,21 +106,26 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         }
 
         tvPath.setOnClickListener {
-            if(hasPermission()) {
+            if (hasPermission()) {
                 val i = Intent(this@MainActivity, FileExplorerActivity::class.java)
                 startActivityForResult(i, SELECT_DIRECTORY_RES_CODE)
-            }else{
+            } else {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     reqPermissions()
                 }
             }
         }
+
+        icMenu.setOnClickListener { v ->
+            dispMenu(v)
+
+        }
     }
 
     private fun setChunks() {
         totalChunks = (byteSize / TEN_MB).toInt()
-        when{
-            totalChunks * TEN_MB < byteSize -> totalChunks ++
+        when {
+            totalChunks * TEN_MB < byteSize -> totalChunks++
         }
     }
 
@@ -154,7 +163,7 @@ class MainActivity : AppCompatActivity(), TextWatcher {
     }
 
     @SuppressLint("StaticFieldLeak")
-    private inner class WriteToFileAsync(val filename: String, val bytes : Long) :
+    private inner class WriteToFileAsync(val filename: String, val bytes: Long) :
         AsyncTask<String, String, String>() {
 
         override fun doInBackground(vararg params: String): String {
@@ -166,14 +175,17 @@ class MainActivity : AppCompatActivity(), TextWatcher {
             val file = File(path, filename)
 
             try {
-                var prog: Long = 0
+
+                var prog = 0
 
                 if (byteSize > TEN_MB) {
                     val chunks = bytes / TEN_MB
                     for (i in 0 until chunks) {
+                        if (isCancelled)
+                            break
                         val ba = ByteArray(TEN_MB)
                         file.appendBytes(ba)
-                        prog ++
+                        prog++
                         publishProgress("$prog")
                     }
 
@@ -184,29 +196,27 @@ class MainActivity : AppCompatActivity(), TextWatcher {
                     if (remainder > 0) {
                         val ba = ByteArray(remainder.toInt())
                         file.appendBytes(ba)
-                        prog ++
+                        prog++
                         publishProgress("$prog")
                     }
                 } else {
                     val ba = ByteArray(bytes.toInt())
                     file.writeBytes(ba)
                 }
-            }catch(e:Exception){
+            } catch (e: Exception) {
                 runOnUiThread {
-                    handledCancelledAsync(e.message.toString())
+                    dispAsyncErrDialog(e.message.toString())
                 }
                 cancel(true)
             }
-
             return file.toString()
         }
 
         @SuppressLint("SetTextI18n")
         override fun onProgressUpdate(vararg values: String) {
-            val b = values[0].toInt()
-            val percent = (b * 100) / totalChunks
-            tvProgress.text = String.format(Locale.getDefault(), "%d%%", percent)
-            progressBar.progress = b
+            val bytes = values[0].toInt()
+            tvProgress.text = String.format(Locale.getDefault(), "%d%%", (bytes * 100) / totalChunks)
+            progressBar.progress = bytes
         }
 
         override fun onPostExecute(result: String) {
@@ -219,7 +229,7 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         override fun onCancelled(result: String?) {
             super.onCancelled(result)
 
-            Toast.makeText(this@MainActivity, "process cancelled",Toast.LENGTH_LONG).show()
+            Toast.makeText(this@MainActivity, "process cancelled", Toast.LENGTH_LONG).show()
             isProcessing = false
             progressDialog.dismiss()
         }
@@ -237,10 +247,10 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         }
     }
 
-    private fun fileCreated(fn : String){
+    private fun fileCreated(fn: String) {
         val file = File(fn)
         val fileCreatedDialog = AlertDialog.Builder(this)
-        if(file.exists()) {
+        if (file.exists()) {
             fileCreatedDialog.setTitle("File Created")
             fileCreatedDialog.setMessage("'${file.name}' was successfully created")
             fileCreatedDialog.setPositiveButton("close") { d, _ ->
@@ -250,11 +260,11 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         fileCreatedDialog.create().show()
     }
 
-    private fun handledCancelledAsync(s : String){
+    private fun dispAsyncErrDialog(s: String) {
         val errDialog = AlertDialog.Builder(this)
         errDialog.setTitle("Error")
         errDialog.setMessage(s)
-        errDialog.setPositiveButton("close"){d,_->
+        errDialog.setPositiveButton("close") { d, _ ->
             d.dismiss()
         }
         errDialog.create().show()
@@ -267,7 +277,7 @@ class MainActivity : AppCompatActivity(), TextWatcher {
     }
 
     @SuppressLint("InflateParams")
-    private fun initProgressDialog(){
+    private fun initProgressDialog() {
         val v = LayoutInflater.from(this).inflate(R.layout.progress_dialog, null)
         progressDialog = AlertDialog.Builder(this).create()
         progressDialog.setTitle("Creating File...")
@@ -301,16 +311,17 @@ class MainActivity : AppCompatActivity(), TextWatcher {
     }
 
     private fun hasPermission(): Boolean {
-        for(perm in permissionsList){
-            if(ActivityCompat.checkSelfPermission(this,perm)
-                != PackageManager.PERMISSION_GRANTED){
+        for (perm in permissionsList) {
+            if (ActivityCompat.checkSelfPermission(this, perm)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
                 return false
             }
         }
         return true
     }
 
-    private fun reqPermissions(){
+    private fun reqPermissions() {
         if (Build.VERSION.SDK_INT >= 23) {
             requestPermissions(permissionsList, PERMS_REQUEST_CODE)
         }
@@ -321,9 +332,46 @@ class MainActivity : AppCompatActivity(), TextWatcher {
         if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             Log.d("PERMISSION", "granted")
         } else {
-            if (!ActivityCompat.shouldShowRequestPermissionRationale(this, permissionsList[0]) || !ActivityCompat.shouldShowRequestPermissionRationale(this, permissionsList[1])) {
+            if (!ActivityCompat.shouldShowRequestPermissionRationale(
+                    this,
+                    permissionsList[0]
+                ) || !ActivityCompat.shouldShowRequestPermissionRationale(this, permissionsList[1])
+            ) {
                 Toast.makeText(this@MainActivity, "access denied :(", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        return when (item.itemId) {
+            R.id.action_empty_message -> {
+                startActivity(Intent(this@MainActivity, LoremIpsumGeneratorActivity::class.java))
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+
+    private fun dispMenu(v: View) {
+        val pum = PopupMenu(this, v)
+        pum.apply {
+
+            menu.add("Lorem ipsum generator")
+            setOnMenuItemClickListener {
+                startActivity(Intent(v.context, LoremIpsumGeneratorActivity::class.java))
+                false
+            }
+            show()
         }
     }
 }

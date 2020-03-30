@@ -6,8 +6,6 @@ import android.os.Environment
 import android.support.v7.app.AlertDialog
 import android.support.v7.app.AppCompatActivity
 import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -29,8 +27,9 @@ class FileExplorerActivity : AppCompatActivity() {
         setContentView(R.layout.activity_file_explorer)
         setSupportActionBar(toolbar)
 
+        toolbar.visibility = View.GONE
 
-        btnExplorerSelect.setOnClickListener {
+        fabSelectDir.setOnClickListener {
             intent.putExtra(EXTRA_FILENAME, currentFile.toString())
             setResult(SELECT_DIRECTORY_RES_CODE, intent)
             finish()
@@ -51,6 +50,15 @@ class FileExplorerActivity : AppCompatActivity() {
                 currentFile = file
                 listFiles()
             }
+        }
+
+        icHome.setOnClickListener {
+            currentFile = rootFile
+            listFiles()
+        }
+
+        icNewFolder.setOnClickListener {
+            newDirDialog()
         }
     }
 
@@ -76,7 +84,7 @@ class FileExplorerActivity : AppCompatActivity() {
         currentFile.listFiles().forEach { f -> files.add(f) }
         files.sort()
         adapter.notifyDataSetChanged()
-        supportActionBar?.subtitle = "$currentFile"
+        tvPath.text = "$currentFile"
     }
 
     @SuppressLint("InflateParams")
@@ -119,29 +127,6 @@ class FileExplorerActivity : AppCompatActivity() {
                 return
             }
             else -> super.onBackPressed()
-        }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        val menuId = R.menu.menu_explorer
-        menuInflater.inflate(menuId, menu)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-
-            R.id.action_add_folder -> {
-                newDirDialog()
-                true
-            }
-
-            R.id.action_home_dir -> {
-                currentFile = rootFile
-                listFiles()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
         }
     }
 }

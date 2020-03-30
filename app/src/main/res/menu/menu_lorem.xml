@@ -1,0 +1,11 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools"
+      tools:context="com.spencerstudios.makefilesize.LoremIpsumGeneratorActivity">
+
+    <item android:id="@+id/action_copy"
+          android:title="copy"
+          android:orderInCategory="100"
+          app:showAsAction="never"
+          tools:ignore="HardcodedText"/>
+</menu>
