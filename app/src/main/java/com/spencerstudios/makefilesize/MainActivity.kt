@@ -139,27 +139,8 @@ class MainActivity : AppCompatActivity(), TextWatcher {
             }
         }
         byteSize = ((arr[0] * MB) + (arr[1] * KB) + arr[2])
-        formatBytes()
-    }
-
-    private fun formatBytes() {
-        var unit = "B"
-        var size: Double = byteSize.toDouble()
-        when {
-            byteSize >= MB -> {
-                unit = "MB"
-                size /= MB
-            }
-            byteSize >= KB -> {
-                unit = "KB"
-                size /= KB
-            }
-        }
         tvBytes.text = String.format(Locale.getDefault(), "%,d bytes", byteSize)
-        tvFormattedBytes.text = when {
-            size % 1 == .0 -> String.format(Locale.getDefault(), "%,d %s", size.toInt(), unit)
-            else -> String.format(Locale.getDefault(), "%,.2f %s", size, unit)
-        }
+        tvFormattedBytes.text = formatBytes(byteSize)
     }
 
     @SuppressLint("StaticFieldLeak")
@@ -250,13 +231,27 @@ class MainActivity : AppCompatActivity(), TextWatcher {
     private fun fileCreated(fn: String) {
         val file = File(fn)
         val fileCreatedDialog = AlertDialog.Builder(this)
-        if (file.exists()) {
-            fileCreatedDialog.setTitle("File Created")
-            fileCreatedDialog.setMessage("'${file.name}' was successfully created")
-            fileCreatedDialog.setPositiveButton("close") { d, _ ->
-                d.dismiss()
+
+        val title: String
+        val msg: String
+
+        when {
+            file.exists() -> {
+                title = "File Created"
+                msg = "'${file.name}' was successfully created"
+            }
+            else -> {
+                title = "File Not Created"
+                msg = "file was not created"
             }
         }
+
+        fileCreatedDialog.setTitle(title)
+        fileCreatedDialog.setMessage(msg)
+        fileCreatedDialog.setPositiveButton("close") { d, _ ->
+            d.dismiss()
+        }
+
         fileCreatedDialog.create().show()
     }
 

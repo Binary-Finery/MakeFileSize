@@ -44,7 +44,6 @@ class LoremIpsumGeneratorActivity : AppCompatActivity() {
     fun dispDialog() {
         val v = LayoutInflater.from(this).inflate(R.layout.lorem_ipsum_dialog, null)
         val dialog = AlertDialog.Builder(this)
-        dialog.setTitle("Settings")
         dialog.setView(v)
 
         val qty: EditText = v.findViewById(R.id.etQty)

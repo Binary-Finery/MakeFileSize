@@ -43,7 +43,20 @@ class FileExplorerActivity : AppCompatActivity() {
 
         listFiles()
 
-        lv.setOnItemClickListener { parent, view, pos, id ->
+        lv.setOnItemLongClickListener { _, _, position, _ ->
+            try {
+                val file = files[position]
+                if (file.deleteRecursively()) {
+                    listFiles()
+                    Toast.makeText(this@FileExplorerActivity, "deleted", Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            true
+        }
+
+        lv.setOnItemClickListener { _, _, pos, _ ->
             val file = files[pos]
 
             if (file.isDirectory) {
@@ -59,6 +72,10 @@ class FileExplorerActivity : AppCompatActivity() {
 
         icNewFolder.setOnClickListener {
             newDirDialog()
+        }
+
+        icClose.setOnClickListener {
+            finish()
         }
     }
 
@@ -90,7 +107,6 @@ class FileExplorerActivity : AppCompatActivity() {
     @SuppressLint("InflateParams")
     private fun newDirDialog() {
         val dialog = AlertDialog.Builder(this).create()
-        dialog.setTitle("Create Directory")
         val v = LayoutInflater.from(this).inflate(R.layout.new_dir_dialog, null)
         val etName: EditText = v.findViewById(R.id.etNewDir)
         dialog.setView(v)

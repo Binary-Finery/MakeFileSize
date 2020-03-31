@@ -4,8 +4,17 @@
               android:orientation="vertical"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
-              android:padding="16dp"
->
+              android:padding="16dp">
+
+    <TextView android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:fontFamily="@font/poppins_medium"
+              android:text="New Folder"
+              android:textSize="20sp"
+              android:textStyle="bold"
+              android:layout_marginBottom="8dp"
+              android:textColor="#323232"
+              tools:ignore="HardcodedText"/>
 
 
     <LinearLayout android:layout_width="match_parent"
@@ -24,8 +33,9 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center_vertical"
                 android:layout_marginStart="16dp"
+                android:fontFamily="@font/poppins_medium"
                 android:singleLine="true"
-                android:hint="directory name" tools:ignore="Autofill,HardcodedText,TextFields"/>
+                android:hint="folder name" tools:ignore="Autofill,HardcodedText,TextFields"/>
 
     </LinearLayout>
 

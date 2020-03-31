@@ -8,6 +8,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import java.io.File
+import java.text.DateFormat
 
 class FileAdapter(context: Context, private val items: ArrayList<File>) : BaseAdapter() {
 
@@ -39,13 +40,19 @@ class FileAdapter(context: Context, private val items: ArrayList<File>) : BaseAd
 
         val item = items[position]
 
+        val metaStr : String
+
         if (item.isDirectory) {
             vh.label.text = item.name.plus(" (${item.listFiles().size})")
             vh.ic.setImageResource(R.drawable.ic_folder)
+            metaStr = DateFormat.getDateTimeInstance().format(item.lastModified())
         } else {
             vh.label.text = item.name
             vh.ic.setImageResource(R.drawable.ic_file)
+            metaStr = formatBytes(item.length()).plus("   ").plus(DateFormat.getDateTimeInstance().format(item.lastModified()))
         }
+
+        vh.meta.text = metaStr
 
         return view
     }
@@ -53,5 +60,6 @@ class FileAdapter(context: Context, private val items: ArrayList<File>) : BaseAd
 
 private class ListRowHolder(row: View?) {
     val label: TextView = row?.findViewById(R.id.item_filename) as TextView
+    val meta : TextView = row?.findViewById(R.id.item_meta) as TextView
     val ic: ImageView = row?.findViewById(R.id.ic_file_type) as ImageView
 }
